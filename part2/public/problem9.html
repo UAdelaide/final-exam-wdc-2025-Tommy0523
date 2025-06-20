@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dog Walking Service</title>
+  <script src="https://unpkg.com/vue@3"></script>
+  <style>
+    body {
+      font-family: 'Comic Sans MS', cursive;
+      background: linear-gradient(45deg, #FF6, #6FF, #F6F);
+      animation: colorcycle 5s infinite alternate;
+    }
+    @keyframes colorcycle {
+      0% { background-color: #FF6; }
+      50% { background-color: #6FF; }
+      100% { background-color: #F6F; }
+    }
+    .btn {
+      font-size: 12px;
+      padding: 2px 4px;
+    }
+    img {
+      width: 300px;
+      height: 300px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1 style="color:red;">Today's Dog!</h1>
+    <button class="btn" v-on:dblclick="loadDog">Click to see dog</button>
+    <div v-if="img">
+      <img :src="img">
+    </div>
+  </div>
+  <script>
+    const { createApp } = Vue;
+    createApp({
+      data() {
+        return { img: null }
+      },
+      mounted() {
+        this.loadDog();
+      },
+      methods: {
+        loadDog() {
+          fetch('https://dog.ceo/api/breeds/image/random')
+            .then(r => r.json())
+            .then(data => this.img = data.message);
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html> 

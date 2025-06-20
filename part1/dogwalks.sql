@@ -53,3 +53,27 @@ CREATE TABLE WalkRatings (
     FOREIGN KEY (owner_id) REFERENCES Users(user_id),
     CONSTRAINT unique_rating_per_walk UNIQUE (request_id)
 );
+
+-- 插入五个用户
+INSERT INTO Users (username, email, password_hash, role) VALUES
+  ('alice123',  'alice@example.com',  'password123', 'owner'),
+  ('bobwalker', 'bob@example.com',   'password123', 'walker'),
+  ('carol123',  'carol@example.com', 'password123', 'owner'),
+  ('daveowner', 'dave@example.com',  'password123', 'owner'),
+  ('erinwalker','erin@example.com',  'password123', 'walker');
+
+-- 插入五只狗，owner_id 来自 Users 表
+INSERT INTO Dogs (owner_id, name, size) VALUES
+  ((SELECT user_id FROM Users WHERE username = 'alice123'), 'Max',    'medium'),
+  ((SELECT user_id FROM Users WHERE username = 'carol123'), 'Bella',  'small'),
+  ((SELECT user_id FROM Users WHERE username = 'daveowner'), 'Charlie','large'),
+  ((SELECT user_id FROM Users WHERE username = 'alice123'), 'Luna',   'small'),
+  ((SELECT user_id FROM Users WHERE username = 'daveowner'), 'Rocky', 'medium');
+
+-- 插入五个遛狗请求，dog_id 同时匹配狗的名字和主人的 user_id
+INSERT INTO WalkRequests (dog_id, requested_time, duration_minutes, location, status) VALUES
+  ((SELECT dog_id FROM Dogs WHERE name = 'Max'    AND owner_id = (SELECT user_id FROM Users WHERE username = 'alice123')), '2025-06-10 08:00:00', 30, 'Parklands',       'open'),
+  ((SELECT dog_id FROM Dogs WHERE name = 'Bella'  AND owner_id = (SELECT user_id FROM Users WHERE username = 'carol123')), '2025-06-10 09:30:00', 45, 'Beachside Ave',   'accepted'),
+  ((SELECT dog_id FROM Dogs WHERE name = 'Charlie'AND owner_id = (SELECT user_id FROM Users WHERE username = 'daveowner')), '2025-06-11 10:00:00', 60, 'Dog Park Central','open'),
+  ((SELECT dog_id FROM Dogs WHERE name = 'Luna'   AND owner_id = (SELECT user_id FROM Users WHERE username = 'alice123')), '2025-06-12 14:00:00', 30, 'City Park',       'open'),
+  ((SELECT dog_id FROM Dogs WHERE name = 'Rocky'  AND owner_id = (SELECT user_id FROM Users WHERE username = 'daveowner')), '2025-06-13 07:30:00', 45, 'Riverside Trail', 'completed');

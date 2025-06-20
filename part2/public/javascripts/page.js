@@ -53,7 +53,6 @@ function createPost(){
     };
 
     // Open connection to server & send the post data using a POST request
-    // We will cover POST requests in more detail in week 8
     xmlhttp.open("POST", "/addpost", true);
     xmlhttp.setRequestHeader("Content-type", "application/json");
     xmlhttp.send(JSON.stringify(post));
@@ -194,7 +193,6 @@ function login(){
     };
 
     // Open connection to server & send the post data using a POST request
-    // We will cover POST requests in more detail in week 8
     xmlhttp.open("POST", "/users/login", true);
     xmlhttp.setRequestHeader("Content-type", "application/json");
     xmlhttp.send(JSON.stringify(user));
@@ -211,3 +209,88 @@ function logout(){
     xmlhttp.send();
 
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    const loginForm = document.getElementById('login-form');
+
+    // Function to load all dogs and their random images
+    async function loadDogs() {
+        try {
+            const res = await fetch('/api/dogs');
+            if (!res.ok) {
+                console.error("Failed to fetch dogs from the database.");
+                return;
+            }
+            const dogs = await res.json();
+            const tbody = document.getElementById('dog-table-body');
+            tbody.innerHTML = ''; // Clear existing rows
+
+            for (const dog of dogs) {
+                let imgUrl = 'https://via.placeholder.com/100'; // Default placeholder
+                try {
+                    // Fetch a random image for each dog
+                    const imgRes = await fetch('https://dog.ceo/api/breeds/image/random');
+                    if (imgRes.ok) {
+                        const data = await imgRes.json();
+                        imgUrl = data.message;
+                    }
+                } catch (e) {
+                    console.error('Failed to fetch a dog image from dog.ceo API', e);
+                }
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><img src="${imgUrl}" alt="A random dog photo" class="img-thumbnail" style="width:100px; height:100px; object-fit: cover;"></td>
+                    <td>${dog.dog_name}</td>
+                    <td>${dog.size}</td>
+                    <td>${dog.owner_username}</td>
+                `;
+                tbody.appendChild(row);
+            }
+        } catch (e) {
+            console.error('Failed to load dogs list', e);
+        }
+    }
+
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorElement = document.getElementById('login-error');
+
+            try {
+                const response = await fetch('/api/users/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password }),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    // On successful login, redirect based on role
+                    if (result.user.role === 'owner') {
+                        window.location.href = '/owner-dashboard.html';
+                    } else if (result.user.role === 'walker') {
+                        window.location.href = '/walker-dashboard.html';
+                    } else {
+                        errorElement.textContent = 'Unknown user role.';
+                    }
+                } else {
+                    // Display error message from server
+                    errorElement.textContent = result.message || 'Login failed. Please try again.';
+                }
+            } catch (error) {
+                console.error('Login request failed:', error);
+                errorElement.textContent = 'An error occurred. Please check the console and try again.';
+            }
+        });
+    }
+
+    // Load the dogs table when the page is ready
+    loadDogs();
+});

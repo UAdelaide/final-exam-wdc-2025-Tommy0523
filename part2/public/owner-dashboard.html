@@ -9,7 +9,10 @@
 </head>
 <body class="bg-light">
   <div id="app" class="container py-4">
-    <h1 class="mb-4 text-primary">Owner Dashboard</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="text-primary mb-0">Owner Dashboard</h1>
+      <button id="logout-btn" class="btn btn-outline-secondary">Logout</button>
+    </div>
 
     <!-- Walk request form -->
     <div class="card mb-4">
@@ -19,12 +22,15 @@
       <div class="card-body">
         <form @submit.prevent="submitWalkRequest">
           <div class="mb-3">
-            <label class="form-label">Dog ID</label>
-            <input v-model="form.dog_id" type="number" class="form-control" required>
+            <label for="dog_id" class="form-label">Select Your Dog</label>
+            <select id="dog_id" v-model="form.dog_id" class="form-select" required>
+              <option disabled value="">Choose a dog</option>
+              <option v-for="dog in dogs" :key="dog.dog_id" :value="dog.dog_id">{{ dog.name }}</option>
+            </select>
           </div>
           <div class="mb-3">
-            <label class="form-label">Requested Date & Time</label>
-            <input v-model="form.requested_time" type="datetime-local" class="form-control" required>
+            <label for="requested_time" class="form-label">Time</label>
+            <input type="datetime-local" id="requested_time" v-model="form.requested_time" class="form-control" required>
           </div>
           <div class="mb-3">
             <label class="form-label">Duration (minutes)</label>
@@ -69,13 +75,14 @@
 
     createApp({
       setup() {
-        const form = ref({
+        const { ref, reactive } = Vue;
+        const form = reactive({
           dog_id: '',
           requested_time: '',
           duration_minutes: '',
           location: ''
         });
-
+        const dogs = ref([]);
         const walks = ref([]);
         const message = ref('');
         const error = ref('');
@@ -86,6 +93,19 @@
             walks.value = await res.json();
           } catch (err) {
             error.value = 'Failed to load walk requests';
+          }
+        }
+
+        async function loadDogs() {
+          try {
+            const res = await fetch('/api/users/me/dogs');
+            if (res.ok) {
+              dogs.value = await res.json();
+            } else {
+              console.error('Could not fetch dogs.');
+            }
+          } catch (err) {
+            console.error('Failed to load dogs', err);
           }
         }
 
@@ -117,10 +137,12 @@
 
         onMounted(() => {
           loadWalks();
+          loadDogs();
         });
 
         return {
           form,
+          dogs,
           walks,
           message,
           error,
@@ -128,6 +150,22 @@
         };
       }
     }).mount('#app');
+
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      try {
+        const response = await fetch('/api/users/logout', { method: 'POST' });
+        if (response.ok) {
+          // Redirect to login page on successful logout
+          window.location.href = '/';
+        } else {
+          console.error('Logout failed on the server.');
+          alert('Logout failed. Please try again.');
+        }
+      } catch (e) {
+        console.error('Logout request failed:', e);
+        alert('An error occurred during logout. Please check the console.');
+      }
+    });
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
